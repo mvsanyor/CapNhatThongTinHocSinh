@@ -33,7 +33,6 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
 
-  /* Dòng 1: Tiêu đề app */
   .header-top {
     display: flex; justify-content: space-between; align-items: center;
     padding: 6px 12px;
@@ -45,50 +44,61 @@
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
   .status-dot.connected { background: var(--success); }
 
-/* Dòng 2: Điều hướng học sinh */
+  /* Dòng 2: Điều hướng học sinh */
   .header-nav {
     display: flex; align-items: center;
-    padding: 2px 6px; /* Giảm padding của thanh điều hướng */
-    gap: 4px; /* Giảm khoảng cách giữa các phần tử */
+    padding: 6px 8px; /* Giảm padding */
+    gap: 4px; /* Giảm khoảng cách */
     display: none;
   }
 
-  /* Nút điều hướng nổi bật */
+  /* Nút điều hướng thu nhỏ */
   .btn-nav {
-    border-radius: 5px; 
-    padding: 2px 6px; /* Thu nhỏ đệm bên trong nút (~75%) */
-    font-size: 0.8rem; /* Thu nhỏ cỡ chữ của nút */
-    font-weight: 500; cursor: pointer;
+    border-radius: 6px; 
+    padding: 4px 8px; /* Thu nhỏ đệm bên trong nút (~75%) */
+    font-size: 0.8rem; /* Thu nhỏ cỡ chữ */
+    font-weight: 700; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.2s;
   }
   
-  .btn-nav.btn-back { background: #ef4444; color: #fff; border: 1px solid #dc2828; } /* Màu đỏ cho nút thoát */
+  .btn-nav.btn-back { background: #ef4444; color: #fff; border: 1px solid #dc2828; } 
   .btn-nav.btn-back:active { background: #dc2828; }
   
-  .btn-nav.btn-dir { background: #f97316; color: #fff; border: 1px solid #ea580c; } /* Màu cam cho nút chuyển HS */
+  .btn-nav.btn-dir { background: #f97316; color: #fff; border: 1px solid #ea580c; } 
   .btn-nav.btn-dir:active { background: #ea580c; }
 
   .btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* Khối thông tin HS ở giữa */
   .student-info-center {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    gap: 6px; min-width: 0;
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; min-width: 0;
+  }
+  .student-name-row {
+    display: flex; align-items: center; gap: 6px;
   }
   .student-name-tag {
     font-size: 0.95rem; font-weight: 700; color: var(--accent);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .order-tag {
-    font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+    font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
     background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
     white-space: nowrap;
   }
 
+  /* Badge trạng thái cập nhật */
+  .status-badge {
+    font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-not-updated { background: #fee2e2; color: #ef4444; } /* Màu đỏ nhạt */
+  .badge-updated { background: #d1fae5; color: #10b981; } /* Màu xanh lá nhạt */
+
   /* ── MAIN ── */
   main { padding: 12px; max-width: 600px; margin: 0 auto; }
 
-  /* Màn hình chọn lớp */
   #screen-class { padding-top: 40px; text-align: center; }
   #screen-class h2 { font-size: 1.2rem; margin-bottom: 20px; }
   .class-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
@@ -97,7 +107,6 @@
     background: var(--surface); font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
 
-  /* Form nhập liệu */
   #screen-student { display: none; }
   .form-container {
     background: var(--surface); border: 1px solid var(--border);
@@ -113,13 +122,11 @@
     background: #f8fafc; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 12px;
     font-family: inherit; font-size: 0.95rem; outline: none; transition: all 0.2s;
-    resize: vertical;
-    line-height: 1.4;
+    resize: vertical; line-height: 1.4;
   }
   textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05); }
-  textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; } /* Style khi bị disable */
+  textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
 
-  /* Nút bấm cuối trang */
   .action-bar { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 40px; }
   .btn-action {
     flex: 1; padding: 15px; border-radius: 10px; border: none;
@@ -127,7 +134,6 @@
   }
   .btn-save-next { background: var(--accent); color: #fff; width: 100%; }
 
-  /* Toast & Done */
   #toast {
     position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
     background: #334155; color: #fff; padding: 8px 20px; border-radius: 20px;
@@ -154,8 +160,11 @@
     <button class="btn-nav btn-dir" id="btnPrev" onclick="navigate(-1)">◀</button>
     
     <div class="student-info-center">
-      <div class="student-name-tag"><span id="studentName">Học sinh</span> - <span id="currentClassName">Lớp</span></div>
-      <div class="order-tag"><span id="counterCurrent">0</span>/<span id="counterTotal">0</span></div>
+      <div class="student-name-row">
+        <span class="student-name-tag" id="studentName">Học sinh</span>
+        <span class="order-tag"><span id="counterCurrent">0</span>/<span id="counterTotal">0</span></span>
+      </div>
+      <div class="status-badge" id="updateStatus">Chưa cập nhật</div>
     </div>
 
     <button class="btn-nav btn-dir" id="btnNext" onclick="navigate(1)">▶</button>
@@ -171,27 +180,22 @@
 
   <div id="screen-student">
     <div class="form-container">
-
       <div class="field-group">
-        <label>🏠 Hoàn cảnh <span class="hint">Nghèo, cận nghèo, khó khăn, khác. Bình thường thì để trống</span></label>
+        <label>🏠 Hoàn cảnh <span class="hint">Nghèo, cận nghèo, khó khăn... Bình thường thì để trống</span></label>
         <textarea id="inp_hoanCanh" rows="1"></textarea>
       </div>
-
       <div class="field-group">
-        <label>📝 Chi tiết <span class="hint">Ghi nhận chi tiết các vấn đề cụ thể, hoàn cảnh tốt thì bỏ trống</span></label>
+        <label>📝 Chi tiết <span class="hint">Chi tiết các vấn đề, hoàn cảnh tốt thì bỏ trống</span></label>
         <textarea id="inp_chiTiet" rows="5"></textarea>
       </div>
-
       <div class="field-group">
-        <label>⚠️ Đặc điểm về rèn luyện <span class="hint">Ghi thực tế, thẳng thắn. Học sinh ngoan thì bỏ trống</span></label>
+        <label>💪 Rèn luyện <span class="hint">Ghi thực tế, thẳng thắn. Học sinh ngoan thì bỏ trống</span></label>
         <textarea id="inp_renLuyen" rows="5"></textarea>
       </div>
-
       <div class="field-group">
         <label>⚠️ Hạn chế <span class="hint">Khuyết tật, bệnh... Bình thường thì để trống</span></label>
         <textarea id="inp_hanChe" rows="3"></textarea>
       </div>
-
       <div class="field-group">
         <label>💬 Ghi chú <span class="hint">HS bỏ học, đang bồi dưỡng HSG môn gì ...</span></label>
         <textarea id="inp_ghiChu" rows="1"></textarea>
@@ -213,7 +217,7 @@
 <div id="toast">Đã lưu thành công</div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxPtUjf5JKAHJ-YGkpJDmWF0CyeMlrr-w91wP4kd74C4CvKLwgtv9H2kBdFZ_ly6wJ6/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzmiomVTOTS6UFHVVhpBps2G2mkSEL37wH5lwzuNH4UFX3G_0BOYlNCEKfrc7_PQXFJ/exec';
 
 let allData = [];
 let classStudents = [];
@@ -259,7 +263,6 @@ function selectClass(lop) {
   currentClass = lop;
   classStudents = allData.filter(r => (r['Lớp'] || r['lop'] || '').toString().trim() === lop);
   currentIndex = 0;
-  document.getElementById('currentClassName').textContent = lop;
   document.getElementById('counterTotal').textContent = classStudents.length;
   document.getElementById('screen-class').style.display = 'none';
   document.getElementById('screen-student').style.display = 'block';
@@ -273,13 +276,24 @@ function getField(row, ...keys) {
 }
 
 function renderStudent() {
-  // Mở khóa lại tất cả các textbox khi render học sinh mới
+  // Mở khóa lại tất cả các textbox
   const textareas = document.querySelectorAll('.form-container textarea');
   textareas.forEach(ta => ta.disabled = false);
 
   const s = classStudents[currentIndex];
   document.getElementById('studentName').textContent = getField(s, 'Họ và tên', 'Họ tên', 'Ho ten') || '---';
   document.getElementById('counterCurrent').textContent = currentIndex + 1;
+
+  // LOGIC HIỂN THỊ BADGE ĐÃ CẬP NHẬT (Tìm cột "Đã cập nhật" hoặc "daCapNhat")
+  const updateVal = getField(s, 'Đã cập nhật', 'daCapNhat', 'Đã lưu', 'Da cap nhat').toString().trim().toLowerCase();
+  const badge = document.getElementById('updateStatus');
+  if (updateVal === 'x') {
+    badge.textContent = 'Đã cập nhật';
+    badge.className = 'status-badge badge-updated';
+  } else {
+    badge.textContent = 'Chưa cập nhật';
+    badge.className = 'status-badge badge-not-updated';
+  }
 
   document.getElementById('inp_hoanCanh').value = getField(s, 'Hoàn cảnh', 'hoanCanh');
   document.getElementById('inp_chiTiet').value = getField(s, 'Chi tiết hoàn cảnh', 'chiTiet');
@@ -306,11 +320,11 @@ async function doSave() {
   const old = b2.textContent; 
   b2.textContent = 'Đang lưu...';
 
-  // Khóa tất cả các textbox trong lúc đang lưu
   const textareas = document.querySelectorAll('.form-container textarea');
   textareas.forEach(ta => ta.disabled = true);
 
   const s = classStudents[currentIndex];
+  // Payload đã loại bỏ cột thành tích
   const payload = {
     action: 'update',
     stt: getField(s, 'STT', 'stt') || (currentIndex + 1),
@@ -325,6 +339,11 @@ async function doSave() {
   try {
     await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
     showToast();
+    
+    // Ghi đè trạng thái vào data local để nếu bấm lùi lại thì nhãn chuyển sang Xanh
+    classStudents[currentIndex]['Đã cập nhật'] = 'x';
+    classStudents[currentIndex]['daCapNhat'] = 'x';
+
     if (currentIndex + 1 < classStudents.length) { 
       currentIndex++; 
       renderStudent(); 
@@ -332,7 +351,6 @@ async function doSave() {
       showDone(); 
     }
   } catch(e) {
-    // Nếu lỗi, mở lại textbox để người dùng thử lại
     textareas.forEach(ta => ta.disabled = false);
   } finally {
     saving = false; 
