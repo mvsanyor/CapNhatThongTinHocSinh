@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cập Nhật Học Sinh</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --success: #10b981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER SIÊU GỌN ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+
+  /* Dòng 1: Tiêu đề app */
+  .header-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .header-top h1 { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  
+  .header-status { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-muted); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+  .status-dot.connected { background: var(--success); }
+
+/* Dòng 2: Điều hướng học sinh */
+  .header-nav {
+    display: flex; align-items: center;
+    padding: 2px 6px; /* Giảm padding của thanh điều hướng */
+    gap: 4px; /* Giảm khoảng cách giữa các phần tử */
+    display: none;
+  }
+
+  /* Nút điều hướng nổi bật */
+  .btn-nav {
+    border-radius: 5px; 
+    padding: 2px 6px; /* Thu nhỏ đệm bên trong nút (~75%) */
+    font-size: 0.8rem; /* Thu nhỏ cỡ chữ của nút */
+    font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  
+  .btn-nav.btn-back { background: #ef4444; color: #fff; border: 1px solid #dc2828; } /* Màu đỏ cho nút thoát */
+  .btn-nav.btn-back:active { background: #dc2828; }
+  
+  .btn-nav.btn-dir { background: #f97316; color: #fff; border: 1px solid #ea580c; } /* Màu cam cho nút chuyển HS */
+  .btn-nav.btn-dir:active { background: #ea580c; }
+
+  .btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .student-info-center {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 6px; min-width: 0;
+  }
+  .student-name-tag {
+    font-size: 0.95rem; font-weight: 700; color: var(--accent);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .order-tag {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+    background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── MAIN ── */
+  main { padding: 12px; max-width: 600px; margin: 0 auto; }
+
+  /* Màn hình chọn lớp */
+  #screen-class { padding-top: 40px; text-align: center; }
+  #screen-class h2 { font-size: 1.2rem; margin-bottom: 20px; }
+  .class-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .class-btn {
+    padding: 14px 20px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+
+  /* Form nhập liệu */
+  #screen-student { display: none; }
+  .form-container {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
+  .hint { display: block; font-size: 0.8rem; font-weight: 400; color: var(--text-muted); margin-top: 1px; }
+  
+  textarea {
+    width: 100%;
+    background: #f8fafc; border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-family: inherit; font-size: 0.95rem; outline: none; transition: all 0.2s;
+    resize: vertical;
+    line-height: 1.4;
+  }
+  textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05); }
+  textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; } /* Style khi bị disable */
+
+  /* Nút bấm cuối trang */
+  .action-bar { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 40px; }
+  .btn-action {
+    flex: 1; padding: 15px; border-radius: 10px; border: none;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+  }
+  .btn-save-next { background: var(--accent); color: #fff; width: 100%; }
+
+  /* Toast & Done */
+  #toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    background: #334155; color: #fff; padding: 8px 20px; border-radius: 20px;
+    font-size: 0.85rem; opacity: 0; transition: 0.3s; z-index: 200;
+  }
+  #toast.show { opacity: 1; }
+
+  #screen-done { display: none; flex-direction: column; align-items: center; padding-top: 60px; gap: 15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>Nhập thông tin học sinh</h1>
+    <div class="header-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">...</span>
+    </div>
+  </div>
+
+  <div class="header-nav" id="studentNav">
+    <button class="btn-nav btn-back" onclick="goBack()" title="Quay lại">✕</button>
+    <button class="btn-nav btn-dir" id="btnPrev" onclick="navigate(-1)">◀</button>
+    
+    <div class="student-info-center">
+      <div class="student-name-tag"><span id="studentName">Học sinh</span> - <span id="currentClassName">Lớp</span></div>
+      <div class="order-tag"><span id="counterCurrent">0</span>/<span id="counterTotal">0</span></div>
+    </div>
+
+    <button class="btn-nav btn-dir" id="btnNext" onclick="navigate(1)">▶</button>
+  </div>
+</header>
+
+<main>
+  <div id="screen-class">
+    <h2>Chọn lớp cập nhật</h2>
+    <div id="classLoading">Đang kết nối dữ liệu...</div>
+    <div class="class-grid" id="classGrid"></div>
+  </div>
+
+  <div id="screen-student">
+    <div class="form-container">
+
+      <div class="field-group">
+        <label>🏠 Hoàn cảnh <span class="hint">Nghèo, cận nghèo, khó khăn, khác. Bình thường thì để trống</span></label>
+        <textarea id="inp_hoanCanh" rows="1"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>📝 Chi tiết <span class="hint">Ghi nhận chi tiết các vấn đề cụ thể, hoàn cảnh tốt thì bỏ trống</span></label>
+        <textarea id="inp_chiTiet" rows="5"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>⚠️ Đặc điểm về rèn luyện <span class="hint">Ghi thực tế, thẳng thắn. Học sinh ngoan thì bỏ trống</span></label>
+        <textarea id="inp_renLuyen" rows="5"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>⚠️ Hạn chế <span class="hint">Khuyết tật, bệnh... Bình thường thì để trống</span></label>
+        <textarea id="inp_hanChe" rows="3"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>💬 Ghi chú <span class="hint">HS bỏ học, đang bồi dưỡng HSG môn gì ...</span></label>
+        <textarea id="inp_ghiChu" rows="1"></textarea>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-action btn-save-next" id="btnS2" onclick="saveAndNext()">Lưu & Tiếp</button>
+    </div>
+  </div>
+
+  <div id="screen-done">
+    <div style="font-size:3rem">✅</div>
+    <h2>Hoàn thành lớp <span id="doneClass"></span></h2>
+    <button class="btn-action btn-save-next" onclick="goBack()" style="flex:none; padding:12px 30px">Chọn lớp khác</button>
+  </div>
+</main>
+
+<div id="toast">Đã lưu thành công</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxPtUjf5JKAHJ-YGkpJDmWF0CyeMlrr-w91wP4kd74C4CvKLwgtv9H2kBdFZ_ly6wJ6/exec';
+
+let allData = [];
+let classStudents = [];
+let currentIndex = 0;
+let currentClass = '';
+let saving = false;
+
+async function init() {
+  try {
+    const cb = '_cb_' + Date.now();
+    const script = document.createElement('script');
+    script.src = `${API}?action=getData&callback=${cb}`;
+    window[cb] = (data) => {
+      allData = data;
+      setStatus(true);
+      renderClasses();
+      delete window[cb];
+      document.head.removeChild(script);
+    };
+    document.head.appendChild(script);
+  } catch(e) { setStatus(false); }
+}
+
+function setStatus(ok) {
+  document.getElementById('statusDot').className = 'status-dot' + (ok ? ' connected' : '');
+  document.getElementById('statusText').textContent = ok ? 'Sẵn sàng' : 'Lỗi kết nối';
+}
+
+function renderClasses() {
+  const classes = {};
+  allData.forEach(r => {
+    const l = (r['Lớp'] || r['lop'] || '').toString().trim();
+    if (l) classes[l] = (classes[l] || 0) + 1;
+  });
+  const sorted = Object.keys(classes).sort((a,b) => a.localeCompare(b, 'vi'));
+  document.getElementById('classLoading').style.display = 'none';
+  document.getElementById('classGrid').innerHTML = sorted.map(l => `
+    <button class="class-btn" onclick="selectClass('${l.replace(/'/g,"\\'")}')">${l} (${classes[l]})</button>
+  `).join('');
+}
+
+function selectClass(lop) {
+  currentClass = lop;
+  classStudents = allData.filter(r => (r['Lớp'] || r['lop'] || '').toString().trim() === lop);
+  currentIndex = 0;
+  document.getElementById('currentClassName').textContent = lop;
+  document.getElementById('counterTotal').textContent = classStudents.length;
+  document.getElementById('screen-class').style.display = 'none';
+  document.getElementById('screen-student').style.display = 'block';
+  document.getElementById('studentNav').style.display = 'flex';
+  renderStudent();
+}
+
+function getField(row, ...keys) {
+  for (const k of keys) if (row[k] !== undefined && row[k] !== null) return row[k];
+  return '';
+}
+
+function renderStudent() {
+  // Mở khóa lại tất cả các textbox khi render học sinh mới
+  const textareas = document.querySelectorAll('.form-container textarea');
+  textareas.forEach(ta => ta.disabled = false);
+
+  const s = classStudents[currentIndex];
+  document.getElementById('studentName').textContent = getField(s, 'Họ và tên', 'Họ tên', 'Ho ten') || '---';
+  document.getElementById('counterCurrent').textContent = currentIndex + 1;
+
+  document.getElementById('inp_hoanCanh').value = getField(s, 'Hoàn cảnh', 'hoanCanh');
+  document.getElementById('inp_chiTiet').value = getField(s, 'Chi tiết hoàn cảnh', 'chiTiet');
+  document.getElementById('inp_renLuyen').value = getField(s, 'Đặc điểm về rèn luyện', 'renLuyen');
+  document.getElementById('inp_hanChe').value = getField(s, 'Hạn chế', 'hanChe');
+  document.getElementById('inp_ghiChu').value = getField(s, 'Ghi chú', 'ghiChu');
+
+  document.getElementById('btnPrev').disabled = currentIndex === 0;
+  document.getElementById('btnNext').disabled = currentIndex === classStudents.length - 1;
+  window.scrollTo(0, 0);
+}
+
+function navigate(dir) {
+  currentIndex += dir;
+  renderStudent();
+}
+
+async function doSave() {
+  if (saving) return;
+  saving = true;
+  
+  const b2 = document.getElementById('btnS2');
+  b2.disabled = true;
+  const old = b2.textContent; 
+  b2.textContent = 'Đang lưu...';
+
+  // Khóa tất cả các textbox trong lúc đang lưu
+  const textareas = document.querySelectorAll('.form-container textarea');
+  textareas.forEach(ta => ta.disabled = true);
+
+  const s = classStudents[currentIndex];
+  const payload = {
+    action: 'update',
+    stt: getField(s, 'STT', 'stt') || (currentIndex + 1),
+    daCapNhat: 'x',
+    hoanCanh: document.getElementById('inp_hoanCanh').value,
+    chiTiet: document.getElementById('inp_chiTiet').value,
+    renLuyen: document.getElementById('inp_renLuyen').value,
+    hanChe: document.getElementById('inp_hanChe').value,
+    ghiChu: document.getElementById('inp_ghiChu').value
+  };
+
+  try {
+    await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+    showToast();
+    if (currentIndex + 1 < classStudents.length) { 
+      currentIndex++; 
+      renderStudent(); 
+    } else { 
+      showDone(); 
+    }
+  } catch(e) {
+    // Nếu lỗi, mở lại textbox để người dùng thử lại
+    textareas.forEach(ta => ta.disabled = false);
+  } finally {
+    saving = false; 
+    b2.disabled = false; 
+    b2.textContent = old;
+  }
+}
+
+function saveAndNext() { doSave(); }
+
+function showToast() {
+  const e = document.getElementById('toast'); e.classList.add('show');
+  setTimeout(() => e.classList.remove('show'), 2000);
+}
+
+function showDone() {
+  document.getElementById('screen-student').style.display = 'none';
+  document.getElementById('studentNav').style.display = 'none';
+  document.getElementById('screen-done').style.display = 'flex';
+  document.getElementById('doneClass').textContent = currentClass;
+}
+
+function goBack() {
+  document.getElementById('screen-class').style.display = 'block';
+  document.getElementById('screen-student').style.display = 'none';
+  document.getElementById('studentNav').style.display = 'none';
+  document.getElementById('screen-done').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
