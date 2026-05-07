@@ -324,25 +324,50 @@ async function doSave() {
   textareas.forEach(ta => ta.disabled = true);
 
   const s = classStudents[currentIndex];
-  // Payload đã loại bỏ cột thành tích
+  
+  // Lấy dữ liệu hiện tại đang có trên form
+  const valHoanCanh = document.getElementById('inp_hoanCanh').value;
+  const valChiTiet = document.getElementById('inp_chiTiet').value;
+  const valRenLuyen = document.getElementById('inp_renLuyen').value;
+  const valHanChe = document.getElementById('inp_hanChe').value;
+  const valGhiChu = document.getElementById('inp_ghiChu').value;
+
   const payload = {
     action: 'update',
     stt: getField(s, 'STT', 'stt') || (currentIndex + 1),
     daCapNhat: 'x',
-    hoanCanh: document.getElementById('inp_hoanCanh').value,
-    chiTiet: document.getElementById('inp_chiTiet').value,
-    renLuyen: document.getElementById('inp_renLuyen').value,
-    hanChe: document.getElementById('inp_hanChe').value,
-    ghiChu: document.getElementById('inp_ghiChu').value
+    hoanCanh: valHoanCanh,
+    chiTiet: valChiTiet,
+    renLuyen: valRenLuyen,
+    hanChe: valHanChe,
+    ghiChu: valGhiChu
   };
 
   try {
     await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
     showToast();
     
-    // Ghi đè trạng thái vào data local để nếu bấm lùi lại thì nhãn chuyển sang Xanh
+    // --- BỔ SUNG QUAN TRỌNG: CẬP NHẬT DỮ LIỆU LOCAL ---
+    // Ghi đè trạng thái và dữ liệu vào data local để nếu bấm lùi lại (◀) 
+    // thì form sẽ hiển thị dữ liệu mới nhất vừa gõ, không bị trống hay mất dữ liệu.
     classStudents[currentIndex]['Đã cập nhật'] = 'x';
     classStudents[currentIndex]['daCapNhat'] = 'x';
+    
+    classStudents[currentIndex]['Hoàn cảnh'] = valHoanCanh;
+    classStudents[currentIndex]['hoanCanh'] = valHoanCanh;
+    
+    classStudents[currentIndex]['Chi tiết hoàn cảnh'] = valChiTiet;
+    classStudents[currentIndex]['chiTiet'] = valChiTiet;
+    
+    classStudents[currentIndex]['Đặc điểm về rèn luyện'] = valRenLuyen;
+    classStudents[currentIndex]['renLuyen'] = valRenLuyen;
+    
+    classStudents[currentIndex]['Hạn chế'] = valHanChe;
+    classStudents[currentIndex]['hanChe'] = valHanChe;
+    
+    classStudents[currentIndex]['Ghi chú'] = valGhiChu;
+    classStudents[currentIndex]['ghiChu'] = valGhiChu;
+    // ---------------------------------------------------
 
     if (currentIndex + 1 < classStudents.length) { 
       currentIndex++; 
