@@ -27,6 +27,8 @@
   .header-status { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-muted); }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
   .status-dot.connected { background: var(--success); }
+  .status-dot.loading { background: #f59e0b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   .header-nav {
     display: none; align-items: center;
@@ -64,6 +66,14 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
 
+  #classLoading { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 16px; }
+  .btn-retry {
+    margin-top: 6px; padding: 8px 18px; border-radius: 8px;
+    border: 1.5px solid var(--accent); color: var(--accent);
+    background: #fff; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+  }
+  .btn-retry:active { background: #eff6ff; }
+
   #screen-student { display: none; }
   .form-container {
     background: var(--surface); border: 1px solid var(--border);
@@ -79,8 +89,8 @@
     font-family: inherit; font-size: 0.95rem; outline: none; transition: all 0.2s;
     resize: vertical; line-height: 1.5;
   }
-  textarea:focus  { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.05); }
-  textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+  textarea:focus   { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.05); }
+  textarea:disabled{ background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
 
   .action-bar { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 40px; }
   .btn-action { flex: 1; padding: 15px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; }
@@ -141,17 +151,14 @@
         <label>🚩 Đặc điểm rèn luyện <span class="hint">Ghi thực tế, thẳng thắn. Học sinh ngoan thì bỏ trống</span></label>
         <textarea id="inp_dacDiemRenLuyen" rows="5"></textarea>
       </div>
-	  
-	  <div class="field-group">
-        <label>✨ Ưu điểm <span class="hint">Năng khiếu, thành tích, điểm nổi bật… Bỏ trống nếu không có</span></label>
-        <textarea id="inp_uuDiem" rows="3"></textarea>
-      </div>
-      
-	  <div class="field-group">
+      <div class="field-group">
         <label>⚠️ Hạn chế <span class="hint">Khuyết tật, bệnh… Bình thường thì để trống</span></label>
         <textarea id="inp_hanChe" rows="3"></textarea>
       </div>
-
+      <div class="field-group">
+        <label>✨ Ưu điểm <span class="hint">Năng khiếu, thành tích, điểm nổi bật… Bỏ trống nếu không có</span></label>
+        <textarea id="inp_uuDiem" rows="3"></textarea>
+      </div>
       <div class="field-group">
         <label>💬 Ghi chú <span class="hint">HS đang bồi dưỡng HSG môn gì (để xếp lớp 9), đã bỏ học…</span></label>
         <textarea id="inp_ghiChu" rows="1"></textarea>
@@ -172,7 +179,7 @@
 <div id="toast">Đã lưu thành công</div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycby-34ctyhIGlpbZcVPl37UeqfF5N0gssfXbQkQGO5R_uwWqvyvg4MRFwAFqon_G2eyfmA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzmiomVTOTS6UFHVVhpBps2G2mkSEL37wH5lwzuNH4UFX3G_0BOYlNCEKfrc7_PQXFJ/exec';
 
 const COL = {
   stt:             ['STT'],
@@ -187,89 +194,163 @@ const COL = {
   ghiChu:          ['GhiChu'],
 };
 
+const TIMEOUT_MS = 12000;
+const MAX_RETRY  = 3;
+
 let allData = [], classStudents = [], currentIndex = 0, currentClass = '', saving = false;
+let retryCount = 0;
 
-function col(row, field)        { for (const k of COL[field]) if (row[k] != null && row[k] !== '') return row[k]; return ''; }
-function setLocal(row, field, v){ COL[field].forEach(k => row[k] = v); }
+function col(row, field)         { for (const k of COL[field]) if (row[k] != null && row[k] !== '') return row[k]; return ''; }
+function setLocal(row, field, v) { COL[field].forEach(k => row[k] = v); }
 
-async function init() {
-  try {
-    const cb = '_cb_' + Date.now();
-    const s = document.createElement('script');
-    s.src = `${API}?action=getData&callback=${cb}`;
-    window[cb] = data => { allData = data; setStatus(true); renderClasses(); delete window[cb]; document.head.removeChild(s); };
-    document.head.appendChild(s);
-  } catch { setStatus(false); }
+// ── KẾT NỐI DỮ LIỆU VỚI TIMEOUT + AUTO-RETRY ──────────────────────────────
+
+function init() {
+  retryCount = 0;
+  setStatusLoading();
+  loadWithTimeout();
 }
+
+function setStatusLoading() {
+  document.getElementById('statusDot').className = 'status-dot loading';
+  document.getElementById('statusText').textContent =
+    retryCount > 0 ? `Thử lại ${retryCount}/${MAX_RETRY}…` : 'Đang kết nối…';
+  document.getElementById('classLoading').textContent = 'Đang kết nối dữ liệu…';
+  document.getElementById('classLoading').style.display = 'block';
+}
+
+function loadWithTimeout() {
+  const cb = '_cb_' + Date.now();
+  const s  = document.createElement('script');
+  let done = false;
+
+  const timer = setTimeout(() => {
+    if (done) return;
+    done = true;
+    cleanup(s, cb);
+    handleRetryOrFail('timeout');
+  }, TIMEOUT_MS);
+
+  window[cb] = data => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    cleanup(s, cb);
+    allData = data;
+    retryCount = 0;
+    setStatus(true);
+    renderClasses();
+  };
+
+  s.onerror = () => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    cleanup(s, cb);
+    handleRetryOrFail('network');
+  };
+
+  s.src = `${API}?action=getData&callback=${cb}&_=${Date.now()}`;
+  document.head.appendChild(s);
+}
+
+function cleanup(scriptEl, cbName) {
+  try { document.head.removeChild(scriptEl); } catch {}
+  delete window[cbName];
+}
+
+function handleRetryOrFail() {
+  if (retryCount < MAX_RETRY) {
+    retryCount++;
+    setStatusLoading();
+    setTimeout(loadWithTimeout, 2500);
+  } else {
+    // Hết lần thử → hiện nút thử lại thủ công
+    setStatus(false);
+    document.getElementById('classLoading').innerHTML =
+      'Không thể kết nối.<br><button class="btn-retry" onclick="retryManual()">🔄 Thử lại</button>';
+  }
+}
+
+function retryManual() {
+  retryCount = 0;
+  setStatusLoading();
+  loadWithTimeout();
+}
+
+// ── TRẠNG THÁI KẾT NỐI ─────────────────────────────────────────────────────
 
 function setStatus(ok) {
   document.getElementById('statusDot').className = 'status-dot' + (ok ? ' connected' : '');
   document.getElementById('statusText').textContent = ok ? 'Sẵn sàng' : 'Lỗi kết nối';
 }
 
+// ── RENDER LỚP ──────────────────────────────────────────────────────────────
+
 function renderClasses() {
   const map = {};
-  allData.forEach(r => { const l = col(r,'lop').toString().trim(); if (l) map[l] = (map[l]||0)+1; });
-  document.getElementById('classLoading').style.display = 'none';
-  const grid = document.getElementById('classGrid');
-  grid.innerHTML = '';
-  Object.keys(map).sort((a,b) => a.localeCompare(b,'vi')).forEach(l => {
-    const btn = document.createElement('button');
-    btn.className = 'class-btn';
-    btn.textContent = `${l} (${map[l]})`;
-    btn.addEventListener('click', () => selectClass(l));
-    grid.appendChild(btn);
+  allData.forEach(r => {
+    const l = col(r, 'lop').toString().trim();
+    if (l) map[l] = (map[l] || 0) + 1;
   });
+  document.getElementById('classLoading').style.display = 'none';
+  document.getElementById('classGrid').innerHTML = Object.keys(map)
+    .sort((a, b) => a.localeCompare(b, 'vi'))
+    .map(l => `<button class="class-btn" onclick="selectClass('${l.replace(/'/g, "\\'")}')">${l} (${map[l]})</button>`)
+    .join('');
 }
 
+// ── CHỌN LỚP & RENDER HỌC SINH ─────────────────────────────────────────────
+
 function selectClass(lop) {
-  currentClass = lop;
-  classStudents = allData.filter(r => col(r,'lop').toString().trim() === lop);
-  console.log('[selectClass] lop:', lop, '| found:', classStudents.length, '| allData:', allData.length);
-  if (!classStudents.length) { alert('Không tìm thấy học sinh trong lớp: ' + lop); return; }
-  currentIndex = 0;
-  document.getElementById('counterTotal').textContent = classStudents.length;
-  document.getElementById('screen-class').style.display = 'none';
+  currentClass   = lop;
+  classStudents  = allData.filter(r => col(r, 'lop').toString().trim() === lop);
+  currentIndex   = 0;
+  document.getElementById('counterTotal').textContent   = classStudents.length;
+  document.getElementById('screen-class').style.display   = 'none';
   document.getElementById('screen-student').style.display = 'block';
-  document.getElementById('studentNav').style.display = 'flex';
+  document.getElementById('studentNav').style.display     = 'flex';
   renderStudent();
 }
 
 function renderStudent() {
   document.querySelectorAll('.form-container textarea').forEach(ta => ta.disabled = false);
   const s = classStudents[currentIndex];
-  document.getElementById('studentName').textContent = col(s,'hoTen') || '---';
+
+  document.getElementById('studentName').textContent    = col(s, 'hoTen') || '---';
   document.getElementById('counterCurrent').textContent = currentIndex + 1;
 
-  const updated = col(s,'daCapNhat').toString().trim().toLowerCase() === 'x';
-  const badge = document.getElementById('updateStatus');
+  const updated = col(s, 'daCapNhat').toString().trim().toLowerCase() === 'x';
+  const badge   = document.getElementById('updateStatus');
   badge.textContent = updated ? 'Đã cập nhật' : 'Chưa cập nhật';
-  badge.className = 'status-badge ' + (updated ? 'badge-updated' : 'badge-not-updated');
+  badge.className   = 'status-badge ' + (updated ? 'badge-updated' : 'badge-not-updated');
 
-  document.getElementById('inp_hoanCanh').value        = col(s,'hoanCanh');
-  document.getElementById('inp_chiTietHoanCanh').value = col(s,'chiTietHoanCanh');
-  document.getElementById('inp_dacDiemRenLuyen').value = col(s,'dacDiemRenLuyen');
-  document.getElementById('inp_hanChe').value          = col(s,'hanChe');
-  document.getElementById('inp_uuDiem').value          = col(s,'uuDiem');
-  document.getElementById('inp_ghiChu').value          = col(s,'ghiChu');
+  document.getElementById('inp_hoanCanh').value        = col(s, 'hoanCanh');
+  document.getElementById('inp_chiTietHoanCanh').value = col(s, 'chiTietHoanCanh');
+  document.getElementById('inp_dacDiemRenLuyen').value = col(s, 'dacDiemRenLuyen');
+  document.getElementById('inp_hanChe').value          = col(s, 'hanChe');
+  document.getElementById('inp_uuDiem').value          = col(s, 'uuDiem');
+  document.getElementById('inp_ghiChu').value          = col(s, 'ghiChu');
 
   document.getElementById('btnPrev').disabled = currentIndex === 0;
   document.getElementById('btnNext').disabled = currentIndex === classStudents.length - 1;
-  window.scrollTo(0,0);
+  window.scrollTo(0, 0);
 }
 
 function navigate(dir) { currentIndex += dir; renderStudent(); }
 
+// ── LƯU ────────────────────────────────────────────────────────────────────
+
 async function saveAndNext() {
   if (saving) return;
   saving = true;
-  const btn = document.getElementById('btnS2');
-  btn.disabled = true;
+  const btn     = document.getElementById('btnS2');
+  btn.disabled  = true;
   const oldText = btn.textContent;
   btn.textContent = 'Đang lưu...';
   document.querySelectorAll('.form-container textarea').forEach(ta => ta.disabled = true);
 
-  const s = classStudents[currentIndex];
+  const s    = classStudents[currentIndex];
   const vals = {
     hoanCanh:        document.getElementById('inp_hoanCanh').value,
     chiTietHoanCanh: document.getElementById('inp_chiTietHoanCanh').value,
@@ -280,10 +361,13 @@ async function saveAndNext() {
   };
 
   try {
-    await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'update', stt: col(s,'stt')||(currentIndex+1), daCapNhat:'x', ...vals }) });
+    await fetch(API, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({ action: 'update', stt: col(s, 'stt') || (currentIndex + 1), daCapNhat: 'x', ...vals })
+    });
     showToast();
-    setLocal(s,'daCapNhat','x');
-    Object.entries(vals).forEach(([k,v]) => setLocal(s,k,v));
+    setLocal(s, 'daCapNhat', 'x');
+    Object.entries(vals).forEach(([k, v]) => setLocal(s, k, v));
     if (currentIndex + 1 < classStudents.length) { currentIndex++; renderStudent(); }
     else showDone();
   } catch {
@@ -293,20 +377,26 @@ async function saveAndNext() {
   }
 }
 
-function showToast() { const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+// ── TIỆN ÍCH ───────────────────────────────────────────────────────────────
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
 
 function showDone() {
   document.getElementById('screen-student').style.display = 'none';
-  document.getElementById('studentNav').style.display = 'none';
-  document.getElementById('screen-done').style.display = 'flex';
-  document.getElementById('doneClass').textContent = currentClass;
+  document.getElementById('studentNav').style.display     = 'none';
+  document.getElementById('screen-done').style.display    = 'flex';
+  document.getElementById('doneClass').textContent        = currentClass;
 }
 
 function goBack() {
-  document.getElementById('screen-class').style.display = 'block';
+  document.getElementById('screen-class').style.display   = 'block';
   document.getElementById('screen-student').style.display = 'none';
-  document.getElementById('studentNav').style.display = 'none';
-  document.getElementById('screen-done').style.display = 'none';
+  document.getElementById('studentNav').style.display     = 'none';
+  document.getElementById('screen-done').style.display    = 'none';
 }
 
 init();
