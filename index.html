@@ -403,8 +403,7 @@ function setFieldError(fieldId, msg) {
   const el = document.createElement('div');
   el.className = 'error-msg';
   el.innerHTML = '⚠️ ' + msg;
-  grp.appendChild(el);
-  ta.focus();
+  grp.insertBefore(el, ta);  // ← thay appendChild(el) bằng dòng này
 }
 
 // ── LƯU ────────────────────────────────────────────────────────────────────
@@ -440,7 +439,7 @@ async function saveAndNext() {
   // Validation 1: có hoàn cảnh nhưng không có chi tiết
   if (hoanCanh !== '' && chiTietHoanCanh === '') {
     setFieldError('inp_chiTietHoanCanh',
-      'Thầy cô nhập HS có hoàn cảnh đặc biệt, thầy cô cần nêu chi tiết ở ô chi tiết hoàn cảnh nhé!');
+      'Thầy cô vừa nhập HS có hoàn cảnh đặc biệt, thầy cô cần nêu chi tiết ở ô chi tiết hoàn cảnh này nhé!');
     return;
   }
 
