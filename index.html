@@ -404,6 +404,7 @@ function setFieldError(fieldId, msg) {
   el.className = 'error-msg';
   el.innerHTML = '⚠️ ' + msg;
   grp.insertBefore(el, ta);  // ← thay appendChild(el) bằng dòng này
+  ta.focus(); 
 }
 
 // ── LƯU ────────────────────────────────────────────────────────────────────
