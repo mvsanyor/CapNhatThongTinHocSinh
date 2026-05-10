@@ -103,6 +103,39 @@
   }
   #toast.show { opacity: 1; }
 
+  .field-error textarea {
+    border-color: #ef4444 !important;
+    background: #fff5f5 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+  }
+  .error-msg {
+    font-size: 0.82rem; color: #ef4444; font-weight: 600;
+    margin-top: 4px; display: flex; align-items: flex-start; gap: 5px;
+  }
+
+  /* Modal xác nhận */
+  #confirmModal {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(15,23,42,0.45); align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #confirmModal.show { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 14px; padding: 24px 20px;
+    max-width: 340px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    text-align: center;
+  }
+  .modal-icon { font-size: 2rem; margin-bottom: 10px; }
+  .modal-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+  .modal-msg { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1; padding: 11px; border-radius: 8px; border: none;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  }
+  .modal-btn-no  { background: #f1f5f9; color: var(--text-main); }
+  .modal-btn-yes { background: var(--accent); color: #fff; }
+
   #screen-done { display: none; flex-direction: column; align-items: center; padding-top: 60px; gap: 15px; }
 </style>
 </head>
@@ -177,6 +210,19 @@
 </main>
 
 <div id="toast">Đã lưu thành công</div>
+
+<!-- Modal xác nhận lưu trống -->
+<div id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-icon">🤔</div>
+    <div class="modal-title">Không có gì để cập nhật?</div>
+    <div class="modal-msg">Tất cả các ô đều trống.<br>Thầy cô có chắc chắn không có gì để cập nhật không?</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-no"  onclick="closeConfirm(false)">Không, nhập lại</button>
+      <button class="modal-btn modal-btn-yes" onclick="closeConfirm(true)">Có, lưu luôn</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbzmiomVTOTS6UFHVVhpBps2G2mkSEL37wH5lwzuNH4UFX3G_0BOYlNCEKfrc7_PQXFJ/exec';
@@ -339,10 +385,73 @@ function renderStudent() {
 
 function navigate(dir) { currentIndex += dir; renderStudent(); }
 
+// ── VALIDATION ─────────────────────────────────────────────────────────────
+
+function clearFieldError(fieldId) {
+  const ta = document.getElementById(fieldId);
+  const grp = ta.closest('.field-group');
+  grp.classList.remove('field-error');
+  const old = grp.querySelector('.error-msg');
+  if (old) old.remove();
+}
+
+function setFieldError(fieldId, msg) {
+  const ta = document.getElementById(fieldId);
+  const grp = ta.closest('.field-group');
+  clearFieldError(fieldId);
+  grp.classList.add('field-error');
+  const el = document.createElement('div');
+  el.className = 'error-msg';
+  el.innerHTML = '⚠️ ' + msg;
+  grp.appendChild(el);
+  ta.focus();
+}
+
 // ── LƯU ────────────────────────────────────────────────────────────────────
+
+let _confirmResolve = null;
+
+function openConfirm() {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirmModal').classList.add('show');
+  });
+}
+
+function closeConfirm(yes) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(yes); _confirmResolve = null; }
+}
 
 async function saveAndNext() {
   if (saving) return;
+
+  const hoanCanh        = document.getElementById('inp_hoanCanh').value.trim();
+  const chiTietHoanCanh = document.getElementById('inp_chiTietHoanCanh').value.trim();
+  const dacDiemRenLuyen = document.getElementById('inp_dacDiemRenLuyen').value.trim();
+  const hanChe          = document.getElementById('inp_hanChe').value.trim();
+  const uuDiem          = document.getElementById('inp_uuDiem').value.trim();
+  const ghiChu          = document.getElementById('inp_ghiChu').value.trim();
+
+  // Xóa lỗi cũ
+  ['inp_hoanCanh','inp_chiTietHoanCanh','inp_dacDiemRenLuyen',
+   'inp_hanChe','inp_uuDiem','inp_ghiChu'].forEach(clearFieldError);
+
+  // Validation 1: có hoàn cảnh nhưng không có chi tiết
+  if (hoanCanh !== '' && chiTietHoanCanh === '') {
+    setFieldError('inp_chiTietHoanCanh',
+      'Thầy cô nhập HS có hoàn cảnh đặc biệt, thầy cô cần nêu chi tiết ở ô chi tiết hoàn cảnh nhé!');
+    return;
+  }
+
+  // Validation 2: tất cả ô đều trống
+  const allEmpty = [hoanCanh, chiTietHoanCanh, dacDiemRenLuyen, hanChe, uuDiem, ghiChu]
+    .every(v => v === '');
+  if (allEmpty) {
+    const yes = await openConfirm();
+    if (!yes) return;
+  }
+
   saving = true;
   const btn     = document.getElementById('btnS2');
   btn.disabled  = true;
@@ -352,12 +461,12 @@ async function saveAndNext() {
 
   const s    = classStudents[currentIndex];
   const vals = {
-    hoanCanh:        document.getElementById('inp_hoanCanh').value,
-    chiTietHoanCanh: document.getElementById('inp_chiTietHoanCanh').value,
-    dacDiemRenLuyen: document.getElementById('inp_dacDiemRenLuyen').value,
-    hanChe:          document.getElementById('inp_hanChe').value,
-    uuDiem:          document.getElementById('inp_uuDiem').value,
-    ghiChu:          document.getElementById('inp_ghiChu').value,
+    hoanCanh,
+    chiTietHoanCanh,
+    dacDiemRenLuyen,
+    hanChe,
+    uuDiem,
+    ghiChu,
   };
 
   try {
