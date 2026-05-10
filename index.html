@@ -361,6 +361,8 @@ function selectClass(lop) {
 
 function renderStudent() {
   document.querySelectorAll('.form-container textarea').forEach(ta => ta.disabled = false);
+  ['inp_hoanCanh','inp_chiTietHoanCanh','inp_dacDiemRenLuyen',
+   'inp_hanChe','inp_uuDiem','inp_ghiChu'].forEach(clearFieldError);
   const s = classStudents[currentIndex];
 
   document.getElementById('studentName').textContent    = col(s, 'hoTen') || '---';
