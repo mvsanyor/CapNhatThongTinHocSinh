@@ -215,8 +215,8 @@
 <div id="confirmModal">
   <div class="modal-box">
     <div class="modal-icon">🤔</div>
-    <div class="modal-title">Không có gì để cập nhật?</div>
-    <div class="modal-msg">Tất cả các ô đều trống.<br>Thầy cô có chắc chắn không có gì để cập nhật không?</div>
+    <div class="modal-title">Thầy cô chưa nhập ô nào hết đó!</div>
+    <div class="modal-msg">Thầy cô có chắc chắn không có gì để cập nhật không?</div>
     <div class="modal-actions">
       <button class="modal-btn modal-btn-no"  onclick="closeConfirm(false)">Không, nhập lại</button>
       <button class="modal-btn modal-btn-yes" onclick="closeConfirm(true)">Có, lưu luôn</button>
@@ -403,7 +403,7 @@ function setFieldError(fieldId, msg) {
   const el = document.createElement('div');
   el.className = 'error-msg';
   el.innerHTML = '⚠️ ' + msg;
-  grp.insertBefore(el, ta);  // ← thay appendChild(el) bằng dòng này
+  grp.insertBefore(el, ta);  
   ta.focus(); 
 }
 
