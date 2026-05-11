@@ -225,7 +225,7 @@
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbzmiomVTOTS6UFHVVhpBps2G2mkSEL37wH5lwzuNH4UFX3G_0BOYlNCEKfrc7_PQXFJ/exec';
+const API = 'https://script.google.com/macros/s/AKfycbw7i-u-8s3WeHQafNlPk8TDTyqeOiQMEAuFWBLKWqYVbYVF2jKFvaJZqevf8SmFuljcAg/exec';
 
 const COL = {
   stt:             ['STT'],
@@ -473,7 +473,8 @@ async function saveAndNext() {
 
   try {
     await fetch(API, {
-      method: 'POST', mode: 'no-cors',
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'update', stt: col(s, 'stt') || (currentIndex + 1), daCapNhat: 'x', ...vals })
     });
     showToast();
